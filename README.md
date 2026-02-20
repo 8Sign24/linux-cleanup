@@ -4,20 +4,21 @@
 
 ## 功能特性
 
-| 模块 | 功能 |
-|------|------|
-| **Snap 清理** | 清理旧版本、删除不需要的应用 (Firefox, Thunderbird, Wine 等) |
-| **APT 清理** | 清理 apt 缓存和列表 |
-| **日志清理** | 清理系统日志、journal 日志 |
-| **临时文件** | 清理 /tmp 和用户缓存 ~/.cache |
-| **旧内核** | 清理旧内核文件 |
-| **应用缓存** | 清理 npm, yarn, pip, composer, go, cargo 等缓存 |
+| 模块 | 功能 | 需要 sudo |
+|------|------|----------|
+| **Snap 清理** | 清理旧版本、删除不需要的应用 | ✅ |
+| **APT 清理** | 清理 apt 缓存 | ✅ |
+| **日志清理** | 清理系统日志、journal 日志 | ✅ |
+| **临时文件** | 清理 /tmp 和用户缓存 ~/.cache | /tmp 需要 |
+| **旧内核** | 清理旧内核文件 | ✅ |
+| **应用缓存** | 清理 npm, yarn, pip, composer, go, cargo 等 | ❌ |
 
 ## 支持的模式
 
 - **交互模式** - 每个操作询问确认 (默认)
 - **预览模式** - 只显示占用，不清理
 - **静默模式** - 自动清理所有
+- **用户模式** - 无需 sudo，只清理用户目录
 
 ## 安装
 
@@ -28,11 +29,10 @@ cd linux-cleanup
 
 ## 使用方法
 
-```bash
-# 进入项目目录
-cd linux-cleanup
+### 系统模式（需要 sudo）
 
-# 交互模式 (默认)
+```bash
+# 交互模式
 sudo bash bin/cleanup.sh
 
 # 预览模式 - 查看可释放空间
@@ -42,10 +42,33 @@ sudo bash bin/cleanup.sh --preview
 sudo bash bin/cleanup.sh --silent
 
 # 只清理指定模块
-sudo bash bin/cleanup.sh --module snap    # 只清理 Snap
-sudo bash bin/cleanup.sh --module apt     # 只清理 APT
-sudo bash bin/cleanup.sh --module cache   # 只清理应用缓存
+sudo bash bin/cleanup.sh --module snap
+sudo bash bin/cleanup.sh --module apt
 ```
+
+### 用户模式（无需 sudo）
+
+```bash
+# 交互模式
+bash bin/cleanup.sh --user-only
+
+# 预览模式
+bash bin/cleanup.sh --user-only --preview
+
+# 静默模式
+bash bin/cleanup.sh --user-only --silent
+```
+
+## 选项
+
+| 选项 | 说明 |
+|------|------|
+| `-p, --preview` | 预览模式 - 只显示占用，不清理 |
+| `-s, --silent` | 静默模式 - 自动清理所有 |
+| `-i, --interactive` | 交互模式 - 每个操作询问确认 |
+| `-u, --user-only` | 用户模式 - 无需 sudo |
+| `-m, --module <name>` | 只清理指定模块 |
+| `-h, --help` | 显示帮助 |
 
 ## 项目结构
 
@@ -63,13 +86,13 @@ linux-cleanup/
 │   └── package-cache.sh    # 应用缓存
 ├── config/
 │   └── config.sh           # 配置文件
-├── SPEC.md                 # 功能规格
 └── README.md
 ```
 
 ## 注意事项
 
-- 需要 sudo 权限运行
+- **用户模式** 无需 sudo，只能清理用户目录（~/.cache、npm/pip 缓存等）
+- **系统模式** 需要 sudo，可以清理系统目录
 - 预览模式不会实际清理任何文件
 - 交互模式会询问每个模块是否清理
 - 重要缓存 (npm, yarn, pip 等) 会保留，只清理旧文件
