@@ -9,28 +9,33 @@ cleanup_temp() {
     local temp_size=0
     local freed=0
     
-    # 1. /tmp 目录
+    # 1. /tmp 目录 (需要 sudo，除非是用户自己的文件)
     local tmp_size
     tmp_size=$(get_dir_size "/tmp")
     print_info "/tmp 占用: $(format_size $tmp_size)"
     
-    if [[ "$DRY_RUN" == "true" ]]; then
-        temp_size=$((temp_size + tmp_size))
-    else
-        if ask_confirm "清理 /tmp 目录?"; then
-            echo -n "清理 /tmp..."
-            # 只清理超过 7 天的文件
-            find /tmp -type f -atime +7 -delete 2>/dev/null
-            find /tmp -type d -atime +7 -empty -delete 2>/dev/null
-            local new_tmp_size
-            new_tmp_size=$(get_dir_size "/tmp")
-            freed=$((freed + tmp_size - new_tmp_size))
-            TOTAL_FREED=$((TOTAL_FREED + freed))
-            print_success "已清理 $(format_size $freed)"
+    if [[ "$USER_ONLY" != "true" ]]; then
+        # 系统模式，需要 sudo
+        if [[ "$DRY_RUN" == "true" ]]; then
+            temp_size=$((temp_size + tmp_size))
+        else
+            if ask_confirm "清理 /tmp 目录?"; then
+                echo -n "清理 /tmp..."
+                # 只清理超过 7 天的文件
+                find /tmp -type f -atime +7 -delete 2>/dev/null
+                find /tmp -type d -atime +7 -empty -delete 2>/dev/null
+                local new_tmp_size
+                new_tmp_size=$(get_dir_size "/tmp")
+                freed=$((freed + tmp_size - new_tmp_size))
+                TOTAL_FREED=$((TOTAL_FREED + freed))
+                print_success "已清理 $(format_size $freed)"
+            fi
         fi
+    else
+        print_info "用户模式: 跳过 /tmp (需要 sudo)"
     fi
     
-    # 2. 用户缓存 ~/.cache
+    # 2. 用户缓存 ~/.cache (无需 sudo)
     local cache_size
     cache_size=$(get_dir_size "$HOME/.cache")
     print_info "用户缓存占用: $(format_size $cache_size)"

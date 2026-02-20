@@ -22,6 +22,7 @@ source "${SCRIPT_DIR}/config/config.sh"
 MODE="interactive"
 MODULE=""
 DRY_RUN=false
+USER_ONLY=false
 
 #------------------------------------------------------------------------------
 # 解析参数
@@ -45,6 +46,10 @@ parse_args() {
             -m|--module)
                 MODULE="$2"
                 shift 2
+                ;;
+            -u|--user-only)
+                USER_ONLY=true
+                shift
                 ;;
             -h|--help)
                 show_help
@@ -70,23 +75,25 @@ Linux Cleanup Tool - Linux 系统清理工具
     -p, --preview       预览模式 - 只显示占用，不清理
     -s, --silent        静默模式 - 自动清理所有
     -i, --interactive   交互模式 - 每个操作询问确认 (默认)
+    -u, --user-only    用户模式 - 无需 sudo，只清理用户目录
     -m, --module <name> 只清理指定模块
     -h, --help          显示帮助
 
 可用模块:
-    snap       - Snap 清理
-    apt        - APT 清理
-    log        - 日志清理
+    snap       - Snap 清理 (需要 sudo)
+    apt        - APT 清理 (需要 sudo)
+    log        - 日志清理 (需要 sudo)
     temp       - 临时文件清理
-    kernel     - 旧内核清理
+    kernel     - 旧内核清理 (需要 sudo)
     cache      - 应用程序缓存
     all        - 清理所有模块
 
 示例:
-    $(basename $0)                  # 交互模式
+    $(basename $0)                  # 交互模式 (需要 sudo)
+    $(basename $0) --user-only      # 用户模式 (无需 sudo)
     $(basename $0) --preview        # 预览占用
-    $(basename $0) --silent          # 自动清理
-    $(basename $0) -m snap           # 只清理 snap
+    $(basename $0) --silent         # 自动清理
+    $(basename $0) -m snap          # 只清理 snap
 EOF
 }
 
@@ -98,20 +105,30 @@ main() {
     
     print_banner
     
+    if [[ "$USER_ONLY" == "true" ]]; then
+        echo -e "${YELLOW}用户模式 (无需 sudo)${NC}"
+    else
+        echo -e "${YELLOW}系统模式 (需要 sudo)${NC}"
+    fi
     echo "模式: $MODE"
     echo ""
     
     # 要清理的模块
     local modules=()
     
-    if [[ -n "$MODULE" ]]; then
-        if [[ "$MODULE" == "all" ]]; then
-            modules=(snap apt log temp kernel cache)
-        else
-            modules=("$MODULE")
-        fi
+    if [[ "$USER_ONLY" == "true" ]]; then
+        # 用户模式 - 只清理用户目录
+        modules=(temp cache)
     else
-        modules=(snap apt log temp kernel cache)
+        if [[ -n "$MODULE" ]]; then
+            if [[ "$MODULE" == "all" ]]; then
+                modules=(snap apt log temp kernel cache)
+            else
+                modules=("$MODULE")
+            fi
+        else
+            modules=(snap apt log temp kernel cache)
+        fi
     fi
     
     # 执行清理

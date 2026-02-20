@@ -14,6 +14,8 @@ export BOLD='\033[1m'
 
 # 全局变量
 TOTAL_FREED=0
+MODE="interactive"
+USER_ONLY=false
 
 #------------------------------------------------------------------------------
 # 打印 banner
